@@ -41,6 +41,9 @@ for table in tqdm(["TUniteAuSolDescriptor", "TTypeUnitModuleDescriptor", "TComma
     subprocess.run(comm, shell=True)
 subprocess.run(["move", "NDF_Win", "../raws/{0}".format(parser.parse_args().version)], shell=True)
 
+zz_win = '{0}/{1}/ZZ_Win.dat'.format(parser.parse_args().wargame, parser.parse_args().version).replace("\\", "/")
+comm = ['{0}'.format(parser.parse_args().exporter), zz_win, r"pc\localisation\us\localisation\unites.dic"]
+subprocess.run(comm, shell=True)
 
 # Pull the units dictionary.
 # To do so we first have to find the most recent ZZ_Win.dat file. ZZ_Win.dat is the file which contains many of the
@@ -56,25 +59,25 @@ subprocess.run(["move", "NDF_Win", "../raws/{0}".format(parser.parse_args().vers
 # break, if no keep backtracking.
 #
 # What a pain.
-folders = os.listdir(parser.parse_args().wargame.replace("\\", "/"))
-i = folders.index(parser.parse_args().version)
-while True:
-    previous_version = folders[i - 1]
-    version = folders[i]
-    if version in os.listdir(
-        '{0}/{1}'.format(parser.parse_args().wargame, previous_version).replace("\\", "/")
-    ):
-        zz_win = '{0}/{1}/{2}/ZZ_Win.dat'.format(parser.parse_args().wargame,
-                                                 previous_version,
-                                                 version).replace("\\", "/")
-        comm = ['{0}'.format(parser.parse_args().exporter), zz_win, r"pc\localisation\us\localisation\unites.dic"]
-        subprocess.run(comm, shell=True)
-        if "ZZ_Win" in os.listdir("."):
-            break
-        else:
-            i -= 1
-    else:
-        i -= 1
+# folders = os.listdir(parser.parse_args().wargame.replace("\\", "/"))
+# i = folders.index(parser.parse_args().version)
+# while True:
+#     previous_version = folders[i - 1]
+#     version = folders[i]
+#     if version in os.listdir(
+#         '{0}/{1}'.format(parser.parse_args().wargame, previous_version).replace("\\", "/")
+#     ):
+#         zz_win = '{0}/{1}/{2}/ZZ_Win.dat'.format(parser.parse_args().wargame,
+#                                                  previous_version,
+#                                                  version).replace("\\", "/")
+#         comm = ['{0}'.format(parser.parse_args().exporter), zz_win, r"pc\localisation\us\localisation\unites.dic"]
+#         subprocess.run(comm, shell=True)
+#         if "ZZ_Win" in os.listdir("."):
+#             break
+#         else:
+#             i -= 1
+#     else:
+#         i -= 1
 
 
 # The exporter doesn't quite handle exporting this dictionary data correctly, because it doesn't escape the comma ",

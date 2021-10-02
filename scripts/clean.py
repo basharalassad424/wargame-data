@@ -17,7 +17,7 @@ parser.add_argument("wargame", help="Pass")
 def main():
     # Initial load.
     units = pd.read_csv(parser.parse_args().wargame + "/" + parser.parse_args().version + "/raw_data.csv",
-                        encoding="windows-1252",
+                        encoding="utf-8",
                         index_col=0)
     units = units[~units.apply(lambda srs: 'Deprec!' in srs['NameInMenu'], axis='columns')]
     units = units[~units.apply(lambda srs: 'DEPREC' in srs['NameInMenu'], axis='columns')]
@@ -42,7 +42,7 @@ def main():
             #         import pdb; pdb.set_trace()
 
             fragment = 'Weapon{0}'.format(i)
-            salvo_index = 0 if unit[fragment + 'SalvoStockIndex'] == "null" else int(unit[fragment + 'SalvoStockIndex'])
+            salvo_index = 0 if (np.isnan(unit[fragment + 'SalvoStockIndex'])) else int(unit[fragment + 'SalvoStockIndex'])
 
             # If we haven't already visited this stock index, this weapon is the first one there.
             # Let's copy its data into our new Series!
@@ -59,8 +59,8 @@ def main():
 
                 # Case 1: The new (current) weapon is a smoke weapon.
                 # We see this when Arme == 3 and PhysicalDamages is "null".
-                if (unit[fragment + 'Arme'] == "null" or int(unit[fragment + 'Arme']) == 3) \
-                        and (unit[fragment + 'PhysicalDamages'] == "null"):
+                if (np.isnan(unit[fragment + 'Arme']) or int(unit[fragment + 'Arme']) == 3) \
+                        and (np.isnan(unit[fragment + 'PhysicalDamages'])):
                     # Attach a can-smoke tag to the weapon.
                     srs[previous_fragment + 'CanSmoke'] = True
                 # Case 2a: The first weapon is an SMG, and the second weapon is also an SMG.
@@ -137,7 +137,7 @@ def main():
     units = units.drop([c for c in units.columns if 'Weapon' in c], axis=1).join(weapons)
     hashes = pd.read_csv(parser.parse_args().path + "/" + parser.parse_args().version +
                         "/ZZ_Win/pc/localisation/us/localisation/unites_fixed.csv",
-                         encoding='windows-1252',
+                         encoding='utf-8',
                          index_col=0)
 
     # Clean, clean, clean, clean, clean
@@ -211,7 +211,7 @@ def main():
     }
     units['Sailing'] = units['Sailing'].map(sailing)
 
-    units['HitRollSizeModifier'] = units['HitRollSizeModifier'].map(lambda v: float(v) if v != "null" else np.nan)
+    units['HitRollSizeModifier'] = units['HitRollSizeModifier'].map(lambda v: float(v) if ( v != "null" and not np.isnan(v)) else np.nan)
 
     mother_country = {
         'US': 'United States',
@@ -238,8 +238,8 @@ def main():
     }
 
     units['MotherCountry'] = units['MotherCountry'].map(mother_country)
-    units['ProductionYear'] = units['ProductionYear'].map(lambda v: int(v) if v != "null" else np.nan)
-    units['MaxPacks'] = units['MaxPacks'].map(lambda v: int(v) if v != "null" else np.nan)
+    units['ProductionYear'] = units['ProductionYear'].map(lambda v: int(v) if (v != "null" and not np.isnan(v)) else np.nan)
+    units['MaxPacks'] = units['MaxPacks'].map(lambda v: int(v) if ( v != "null" and not np.isnan(v)) else np.nan)
 
     tab = {
         3: 'LOG',
@@ -257,7 +257,7 @@ def main():
 
     units['ProductionPrice'] = units['ProductionPrice'].map(lambda l: eval(l)[0] if len(eval(l)) > 0 else np.nan)
     units['IsPrototype'] = units['IsPrototype'].map(lambda v: True if v == "True" else False)
-    units['HitRollECMModifier'] = units['HitRollECMModifier'].map(lambda v: float(v) if v != "null" else np.nan)
+    units['HitRollECMModifier'] = units['HitRollECMModifier'].map(lambda v: float(v) if ( v != "null" and not np.isnan(v)) else np.nan)
 
     units['Maxspeed'] = units['Maxspeed'] / 52
     units['MaxSpeed'] = units['Maxspeed']
@@ -280,7 +280,7 @@ def main():
     units['VeteranDeployableAmount'] = [d[3] for d in deployables]
     units['EliteDeployableAmount'] = [d[4] for d in deployables]
 
-    units['UnitStealthBonus'] = units['UnitStealthBonus'].map(lambda v: float(v) if v != "null" else np.nan)
+    units['UnitStealthBonus'] = units['UnitStealthBonus'].map(lambda v: float(v) if ( v != "null" and not np.isnan(v)) else np.nan)
     units['AutoOrientation'] = units['AutoOrientation'].map(lambda v: True if v != "null" else False)
 
     def splash(v):
@@ -314,9 +314,9 @@ def main():
     del units['VitesseCombat']
 
     units['LowAltitudeFlyingAltitude'] = units['LowAltitudeFlyingAltitude'].map(
-        lambda v: int(v) / 52 if v != "null" else np.nan)
+        lambda v: int(v) / 52 if v != "null" and not np.isnan(v) else np.nan)
     units['NearGroundFlyingAltitude'] = units['NearGroundFlyingAltitude'].map(
-        lambda v: int(v) / 52 if v != "null" else np.nan)
+        lambda v: int(v) / 52 if v != "null" and not np.isnan(v) else np.nan)
     units = units.rename(columns={'LowAltitudeFlyingAltitude': 'HelicopterFlyingAltitude',
                                   'NearGroundFlyingAltitude': 'HelicopterHoverAltitude'})
 
@@ -325,13 +325,13 @@ def main():
     units = units.rename(columns={'MaxDamages': 'Strength'})
     units = units.rename(columns={'MaxSuppressionDamages': 'SuppressionCeiling'})
     units['OpticalStrengthAntiradar'] = units['OpticalStrengthAntiradar'].map(
-        lambda v: int(v) if v != "null" else np.nan)
-    units['PorteeVisionTBA'] = units['PorteeVisionTBA'].map(lambda v: int(v) if v != "null" else np.nan)
+        lambda v: int(v) if v != "null" and not np.isnan(v) else np.nan)
+    units['PorteeVisionTBA'] = units['PorteeVisionTBA'].map(lambda v: int(v) if ( v != "null" and not np.isnan(v)) else np.nan)
     units = units.rename(columns={'ProductionPrice': 'Price'})
     units = units.rename(columns={'ProductionYear': 'Year'})
     units = units.rename(
         columns={'StunDamagesRegen': 'StunDamageRegen', 'StunDamagesToGetStunned': 'StunDamageToGetStunned'})
-    units['IsTransporter'] = units['Transporter'].map(lambda v: True if v != "null" else False)
+    units['IsTransporter'] = units['Transporter'].map(lambda v: True if v != "null"  else False)
     del units['Transporter']
     units = units.rename(columns={'UnitStealthBonus': 'Stealth'})
 
@@ -479,12 +479,12 @@ def main():
             fragment = "Weapon{0}".format(wi)
             ret[fragment + 'Tags'] = []
             arme = srs[fragment + 'Arme']
-            arme = float(arme) if arme != "null" else np.nan
+            arme = float(arme) if arme != "null" and not np.isnan(arme) else np.nan
             type_arme = srs[fragment + 'TypeArme']
             physical = srs[fragment + 'PhysicalDamages']
-            physical = float(physical) if physical != "null" else np.nan
+            physical = float(physical) if (physical != "null" and not np.isnan(physical)) else np.nan
             # Determine AP.
-            if arme < 3 or arme == "null":
+            if arme < 3 or arme == "null"or np.isnan(arme):
                 ret[fragment + 'AP'] = np.nan
             elif arme == 3:
                 if type_arme not in ['Rocket Launcher', 'HMG', 'MMG', 'Flamethrower'] and 'Bomb' not in type_arme:
@@ -507,7 +507,7 @@ def main():
                     ret[fragment + 'Tags'] = ret[fragment + 'Tags'] + ['AoE']
 
                     # Determine HE.
-            if physical == "null":
+            if np.isnan(physical):
                 ret[fragment + 'HE'] = np.nan
             else:
                 ret[fragment + 'HE'] = physical
@@ -516,12 +516,12 @@ def main():
             for c in ['RadiusSplashPhysicalDamages', 'Puissance', 'TempsEntreDeuxTirs', 'TempsEntreDeuxSalves',
                       'NbrProjectilesSimultanes', 'NbTirParSalves', 'RadiusSplashSuppressDamages', 'TempsDeVisee',
                       'DispersionAtMaxRange', 'DispersionAtMinRange', 'CorrectedShotDispersionMultiplier']:
-                if srs[fragment + c] == "null":
+                if np.isnan(srs[fragment + c]):
                     srs[fragment + c] = np.nan
                 else:
                     srs[fragment + c] = float(srs[fragment + c])
             for c in [c for c in ['MissileMaxSpeed', 'MissileMaxAcceleration'] if fragment + c in srs.index]:
-                if srs[fragment + c] == "null":
+                if np.isnan(srs[fragment + c]):
                     srs[fragment + c] = np.nan
                 else:
                     srs[fragment + c] = float(srs[fragment + c])
@@ -543,7 +543,7 @@ def main():
             for c in ['PorteeMaximale', 'PorteeMinimale', 'PorteeMinimaleBateaux', 'PorteeMaximaleBateaux',
                       'PorteeMaximaleTBA', 'PorteeMinimaleTBA', 'PorteeMinimaleHA', 'PorteeMaximaleHA',
                       'PorteeMaximaleProjectile', "PorteeMinimaleProjectile"]:
-                if srs[fragment + c] == "null":
+                if np.isnan(srs[fragment + c]):
                     srs[fragment + c] = np.nan
                 else:
                     srs[fragment + c] = float(srs[fragment + c])
@@ -560,7 +560,7 @@ def main():
 
             # Level
             lvl = srs[fragment + 'Level']
-            if lvl == "null":
+            if np.isnan(lvl):
                 ret[fragment + 'PositionOnCard'] = np.nan
             else:
                 ret[fragment + 'PositionOnCard'] = int(lvl)
@@ -575,7 +575,7 @@ def main():
             # Accuracies
             for c in ['HitProbability', 'HitProbabilityWhileMoving', 'MinimalCritProbability',
                       'MinimalHitProbability']:
-                if srs[fragment + c] == "null":
+                if np.isnan(srs[fragment + c]):
                     ret[fragment + c] = np.nan
                 else:
                     ret[fragment + c] = srs[fragment + c]
@@ -626,7 +626,7 @@ def main():
             ret[fragment + 'Caliber'] = srs[fragment + 'Caliber']
 
             salvo_num = srs[fragment + 'SalvoStockIndex']
-            salvo_num = int(float(salvo_num)) if salvo_num != "null" else 0
+            salvo_num = int(float(salvo_num)) if salvo_num != "null" and not np.isnan(salvo_num) else 0
             number_shots_per_salvo = eval(srs['Salves'])[salvo_num]
             ret[fragment + 'NumberOfSalvos'] = int(number_shots_per_salvo)
             ret[fragment + 'DisplayedAmmunition'] = srs[fragment + 'AffichageMunitionParSalve'] * ret[
